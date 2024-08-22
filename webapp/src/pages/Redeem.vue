@@ -1,12 +1,12 @@
 <script setup>
-import { waitForTransaction, writeContract} from '@wagmi/core'
+import { waitForTransactionReceipt, writeContract} from '@wagmi/core'
 import { ref, onMounted, watch, computed } from 'vue';
 import ContractABI from '../abi/contract.json'
 import { store } from '../store.js'
+import core from '../core'
 
 const props = defineProps(['closeDetailScreen', 'claim', 'detailNFT', 'setScratched', 'toggleModal'])
 const activeProduct = computed(() => store.getProduct())
-
 
 let count = ref(0);
 let imageLoaded = ref(false)
@@ -20,6 +20,7 @@ let modalFinish = ref(false)
 
 if(props.claim == true) {
     winModal.value = true
+    count.value = 8
 }
 
 const disableTutorial = () => {
@@ -34,27 +35,33 @@ const toggleShow = () => {
 const redeem = async (address) => {
     txHash.value = ""
 
+    console.log("redeem", address)
     winModal.value = false
     modalLoading.value = true;
     modalLoadingText.value = "Please confirm the claim in your connected wallet"
     try {
-        const { hash } = await writeContract({
+        const hash = await writeContract(core.config, {
             address: address,
             abi: ContractABI,
             functionName: 'claimPrize',
-            chainId: 137,
+            gas: 130000,
             args: [props.detailNFT.id]
         })
         modalLoadingText.value = "Waiting for transaction to confirm"
         txHash.value = hash
-        await waitForTransaction({ hash })
+        let normalHash = { hash }
+        await waitForTransactionReceipt(core.config, { normalHash })
+        winModal.value = false
         modalLoading.value = false
         modalFinish.value = true
     } catch (e) {
-        console.log(e)
-        winModal.value = true
-        modalLoading.value = false;
-
+        if(e instanceof TypeError) {
+            modalLoading.value = false
+            modalFinish.value = true
+        } else {
+            winModal.value = true
+            modalLoading.value = false;
+        }
     }
 }
 
