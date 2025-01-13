@@ -252,11 +252,6 @@ export const store = reactive({
     return products.find(product => product.id === this.productId );
   },
   getRandomOtherProduct() {
-    // let product = products.find(product => product.id !== this.productId && product.active == true)
-    // const filtered = products.filter((i)=> products.id !== i.id && i.active === true);
-    // const random = Math.floor(Math.random() * filtered.length);
-    // console.log(filtered, filtered[random], random);
-    // return filtered[random];
     return products.find(product => product.id !== this.productId && product.active == true);
   },
   getProductContractAddresses() {
